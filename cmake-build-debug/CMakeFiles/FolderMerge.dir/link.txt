@@ -1,0 +1,3 @@
+"D:\software\clion\install\CLion 2021.1.1\bin\cmake\win\bin\cmake.exe" -E rm -f CMakeFiles\FolderMerge.dir/objects.a
+D:\software\msys2\install\mingw64\bin\ar.exe cr CMakeFiles\FolderMerge.dir/objects.a @CMakeFiles\FolderMerge.dir\objects1.rsp
+D:\software\msys2\install\mingw64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\FolderMerge.dir/objects.a -Wl,--no-whole-archive -o FolderMerge.exe -Wl,--out-implib,libFolderMerge.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\FolderMerge.dir\linklibs.rsp

@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/Git/FolderMerge/main.cpp
+iostream
+-
+string
+-
+fstream
+-
+io.h
+-
+iconv.h
+-
+sstream
+-
+vector
+-
+

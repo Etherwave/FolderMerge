@@ -1,0 +1,4 @@
+"D:\software\clion\install\CLion 2021.1.1\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - MinGW Makefiles" D:\Git\FolderMerge
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/Git/FolderMerge/cmake-build-debug
