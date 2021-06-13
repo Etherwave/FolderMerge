@@ -4,5 +4,3 @@ project(FolderMerge)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(FolderMerge main.cpp)
-
-target_link_libraries(FolderMerge iconv)

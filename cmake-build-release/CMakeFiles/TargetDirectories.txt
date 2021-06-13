@@ -1,3 +1,3 @@
-D:/Git/FolderMerge/cmake-build-release/CMakeFiles/FolderMerge.dir
-D:/Git/FolderMerge/cmake-build-release/CMakeFiles/edit_cache.dir
-D:/Git/FolderMerge/cmake-build-release/CMakeFiles/rebuild_cache.dir
+/home/amzing/Git/FolderMerge/cmake-build-release/CMakeFiles/rebuild_cache.dir
+/home/amzing/Git/FolderMerge/cmake-build-release/CMakeFiles/edit_cache.dir
+/home/amzing/Git/FolderMerge/cmake-build-release/CMakeFiles/FolderMerge.dir

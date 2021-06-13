@@ -1,10 +1,18 @@
 #include <iostream>
 #include <string>
+#include <string.h>
 #include <fstream>
-#include <io.h>
 #include <iconv.h>
 #include <sstream>
 #include <vector>
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#endif
 
 using namespace std;
 
@@ -133,17 +141,40 @@ int get_FileType(string path)
 {
     WIN32_UTF8_to_GBK(path);
     int FileType = -1;
+#ifdef _WIN32
     intptr_t handle;
     _finddata_t findData;
-
     handle = _findfirst(path.c_str(), &findData);
     if (handle != -1)        // 检查是否成功
-    {
         FileType = findData.attrib;
-    }
-
     _findclose(handle);
+#else
+    struct stat _stat;
+    int ret = lstat(path.c_str(), &_stat);
+    if(ret!=-1)
+        FileType = _stat.st_mode;
+#endif
     return FileType;
+}
+
+bool is_FileType_means_Folder(int file_type)
+{
+#ifdef _WIN32
+    return file_type == _A_SUBDIR;
+#else
+    return S_ISDIR(file_type);
+#endif
+}
+
+int generate_makedir(string path)
+{
+    int t = -1;
+#ifdef _WIN32
+    t = mkdir(path.c_str());
+#else
+    t = mkdir(path.c_str(), 00766);
+#endif
+    return t;
 }
 
 bool is_same_file(string file1_path, string file2_path)
@@ -230,27 +261,43 @@ vector<string> get_folder_sub_files(string folder_path)
     vector<string> sub_files;
     //首先检查路径十分正确
     int folder_file_type = get_FileType(folder_path);
-    if(folder_file_type!=_A_SUBDIR)return sub_files;
+    if(!is_FileType_means_Folder(folder_file_type))return sub_files;
 
+#ifdef _WIN32
     //获取文件夹下的文件
     //文件句柄
     //注意：我发现有些文章代码此处是long类型，实测运行中会报错访问异常
-    intptr_t hFile = 0;
+    intptr_t hFile = -1;
     //文件信息
     struct _finddata_t file_data;
     if ((hFile = _findfirst(string(folder_path+"\\*").c_str(), &file_data)) != -1)
     {
         do
         {
-            //如果是目录,递归查找
             //如果不是,把文件绝对路径存入vector中
             if(strcmp(file_data.name, ".") != 0 && strcmp(file_data.name, "..") != 0)
             {
                 sub_files.push_back(file_data.name);
             }
         } while (_findnext(hFile, &file_data) == 0);
-        close(hFile);
     }
+    close(hFile);
+#else
+    DIR * _dir;
+    struct dirent *_dirrent;
+    _dir = opendir(folder_path.c_str());
+    if (_dir)
+    {
+        while (_dirrent = readdir(_dir))
+        {
+            if(strcmp(_dirrent->d_name, ".") != 0 && strcmp(_dirrent->d_name, "..") != 0)
+            {
+                sub_files.push_back(_dirrent->d_name);
+            }
+        }
+    }
+    closedir(_dir);
+#endif
     return sub_files;
 }
 
@@ -264,9 +311,9 @@ ErrorInfo merge_folder(string input_folder_path, string merge_folder_path)
     //2 merge_folder是一个还未创建的文件夹路径，试着创建文件夹
     //3 merge_folder是一个错误路径，无法创建文件夹
     int merge_folder_file_type = get_FileType(merge_folder_path);
-    if(merge_folder_file_type!=_A_SUBDIR)
+    if(!is_FileType_means_Folder(merge_folder_file_type))
     {
-        int t = mkdir(merge_folder_path.c_str());
+        int t = generate_makedir(merge_folder_path);
         if(t==-1)
         {
             errorInfo.error_code = -2;
@@ -278,7 +325,7 @@ ErrorInfo merge_folder(string input_folder_path, string merge_folder_path)
     //确定输入文件夹路径正确
     int input_folder_file_type = get_FileType(input_folder_path);
     //首先判断两个源文件夹是否存在
-    if(input_folder_file_type!=_A_SUBDIR)
+    if(!is_FileType_means_Folder(input_folder_file_type))
     {
         errorInfo.error_code = -3;
         errorInfo.error_info += ("源文件夹不存在: "+input_folder_path);
@@ -303,7 +350,7 @@ ErrorInfo merge_folder(string input_folder_path, string merge_folder_path)
         input_file_path = input_folder_path+"/"+input_folder_sub_files[i];
         merge_file_path = merge_folder_path+"/"+input_folder_sub_files[i];
 
-        if(get_FileType(input_file_path)==_A_SUBDIR)
+        if(is_FileType_means_Folder(get_FileType(input_file_path)))
         {
             ErrorInfo t_errorInfo=merge_folder(input_file_path, merge_file_path);
             if(t_errorInfo.error_code!=0)
@@ -315,7 +362,7 @@ ErrorInfo merge_folder(string input_folder_path, string merge_folder_path)
         else
         {
             //如果这个文件在目标文件夹中有同名文件(不是文件夹)，那么对比两个文件是否相同，相同就跳过，否则加后缀重命名
-            if(check_file_exist(merge_file_path) && get_FileType(merge_file_path)!=_A_SUBDIR)
+            if(check_file_exist(merge_file_path) && !is_FileType_means_Folder(get_FileType(merge_file_path)))
             {
                 //如果这个同名文件相同，就啥也不干，否则尝试重命名为一个新文件名，让复制过去
                 if(!is_same_file(input_file_path, merge_file_path))
@@ -334,7 +381,7 @@ ErrorInfo merge_folder(string input_folder_path, string merge_folder_path)
                         if(check_file_exist(new_merge_file_path))
                         {
                             //如果存在这个名字的文件，但是这个文件是一个文件夹，那么我们还是可以用这个新名字创建一个文件的
-                            if(get_FileType(new_merge_file_path)==_A_SUBDIR)
+                            if(is_FileType_means_Folder(get_FileType(new_merge_file_path)))
                             {
                                 new_name_flag = true;
                                 break;
@@ -390,9 +437,9 @@ ErrorInfo merge_folder(string input_folder1_path, string input_folder2_path, str
     //2 merge_folder是一个还未创建的文件夹路径，试着创建文件夹
     //3 merge_folder是一个错误路径，无法创建文件夹
     int merge_folder_file_type = get_FileType(merge_folder_path);
-    if(merge_folder_file_type!=_A_SUBDIR)
+    if(!is_FileType_means_Folder(merge_folder_file_type))
     {
-        int t = mkdir(merge_folder_path.c_str());
+        int t = generate_makedir(merge_folder_path);
         if(t==-1)
         {
             errorInfo.error_code = -2;
@@ -406,7 +453,7 @@ ErrorInfo merge_folder(string input_folder1_path, string input_folder2_path, str
     int input_folder2_file_type = get_FileType(input_folder2_path);
 
     //首先判断两个源文件夹是否存在
-    if(input_folder1_file_type==_A_SUBDIR&&input_folder2_file_type==_A_SUBDIR)
+    if(is_FileType_means_Folder(input_folder1_file_type)&& is_FileType_means_Folder(input_folder2_file_type))
     {
         //先去合并第一个文件夹和merge文件夹
         merge_folder(input_folder1_path, merge_folder_path);
@@ -418,9 +465,9 @@ ErrorInfo merge_folder(string input_folder1_path, string input_folder2_path, str
         errorInfo.error_code = -5;
         string t = "源文件夹不存在或不是文件夹: ";
         WIN32_UTF8_to_GBK(t);
-        if(input_folder1_file_type!=_A_SUBDIR)
+        if(!is_FileType_means_Folder(input_folder1_file_type))
             errorInfo.error_info += (t+input_folder1_path);
-        if(input_folder2_file_type!=_A_SUBDIR)
+        if(!is_FileType_means_Folder(input_folder2_file_type))
             errorInfo.error_info += (t+input_folder2_path);
         return errorInfo;
     }

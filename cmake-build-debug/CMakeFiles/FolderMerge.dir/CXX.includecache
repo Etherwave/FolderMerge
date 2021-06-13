@@ -6,19 +6,27 @@
 
 #IncludeRegexTransform: 
 
-D:/Git/FolderMerge/main.cpp
+/home/amzing/Git/FolderMerge/main.cpp
 iostream
 -
 string
 -
-fstream
+string.h
 -
-io.h
+fstream
 -
 iconv.h
 -
 sstream
 -
 vector
+-
+io.h
+-
+unistd.h
+-
+dirent.h
+-
+sys/stat.h
 -
 

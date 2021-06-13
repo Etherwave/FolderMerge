@@ -1,9 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/FolderMerge.dir/main.cpp.obj"
-  "FolderMerge.exe"
-  "FolderMerge.exe.manifest"
+  "CMakeFiles/FolderMerge.dir/main.cpp.o"
+  "FolderMerge"
   "FolderMerge.pdb"
-  "libFolderMerge.dll.a"
 )
 
 # Per-language clean rules from dependency scanning.
